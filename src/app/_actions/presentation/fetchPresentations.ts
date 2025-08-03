@@ -1,7 +1,6 @@
 "use server";
 import "server-only";
 
-import { auth } from "@/server/auth";
 import { db } from "@/server/db";
 import { type Prisma, DocumentType } from "@prisma/client";
 
@@ -14,15 +13,8 @@ export type PresentationDocument = Prisma.BaseDocumentGetPayload<{
 const ITEMS_PER_PAGE = 10;
 
 export async function fetchPresentations(page = 0) {
-  const session = await auth();
-  const userId = session?.user.id;
-
-  if (!userId) {
-    return {
-      items: [],
-      hasMore: false,
-    };
-  }
+  // No authentication required - return all presentations
+  const userId = "anonymous";
 
   const skip = page * ITEMS_PER_PAGE;
 
@@ -65,12 +57,6 @@ export async function fetchPublicPresentations(page = 0) {
       skip: skip,
       include: {
         presentation: true,
-        user: {
-          select: {
-            name: true,
-            image: true,
-          },
-        },
       },
     }),
     db.baseDocument.count({
@@ -90,8 +76,8 @@ export async function fetchPublicPresentations(page = 0) {
 }
 
 export async function fetchUserPresentations(userId: string, page = 0) {
-  const session = await auth();
-  const currentUserId = session?.user.id;
+  // No authentication required - allow access to all presentations
+  const currentUserId = "anonymous";
 
   const skip = page * ITEMS_PER_PAGE;
 

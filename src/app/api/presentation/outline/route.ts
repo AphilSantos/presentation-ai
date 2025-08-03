@@ -1,6 +1,5 @@
 import { LangChainAdapter } from "ai";
 import { NextResponse } from "next/server";
-import { auth } from "@/server/auth";
 import { ChatOpenAI } from "@langchain/openai";
 import { PromptTemplate } from "@langchain/core/prompts";
 import { RunnableSequence } from "@langchain/core/runnables";
@@ -56,11 +55,6 @@ const outlineChain = RunnableSequence.from([
 
 export async function POST(req: Request) {
   try {
-    const session = await auth();
-    if (!session) {
-      return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
-    }
-
     const { prompt, numberOfCards, language } =
       (await req.json()) as OutlineRequest;
 

@@ -1,14 +1,10 @@
 "use server";
 
-import { auth } from "@/server/auth";
 import { db } from "@/server/db";
 
 export async function addToFavorites(documentId: string) {
-  const session = await auth();
-  const userId = session?.user.id;
-  if (!userId) {
-    return { error: "Unauthorized" };
-  }
+  // No authentication required - use anonymous user
+  const userId = "anonymous";
 
   try {
     // Check if already favorited
@@ -39,12 +35,8 @@ export async function addToFavorites(documentId: string) {
 }
 
 export async function removeFromFavorites(documentId: string) {
-  const session = await auth();
-  const userId = session?.user.id;
-
-  if (!userId) {
-    return { error: "Unauthorized" };
-  }
+  // No authentication required - use anonymous user
+  const userId = "anonymous";
 
   try {
     await db.favoriteDocument.deleteMany({

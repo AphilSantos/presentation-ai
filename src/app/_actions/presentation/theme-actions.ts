@@ -1,6 +1,5 @@
 "use server";
 
-import { auth } from "@/server/auth";
 import { db } from "@/server/db";
 import { z } from "zod";
 import { utapi } from "@/app/api/uploadthing/core";
@@ -19,13 +18,7 @@ export type ThemeFormData = z.infer<typeof themeSchema>;
 // Create a new custom theme
 export async function createCustomTheme(formData: ThemeFormData) {
   try {
-    const session = await auth();
-    if (!session?.user) {
-      return {
-        success: false,
-        message: "You must be signed in to create a theme",
-      };
-    }
+    // No authentication required - use anonymous user
 
     const validatedData = themeSchema.parse(formData);
 
@@ -36,7 +29,7 @@ export async function createCustomTheme(formData: ThemeFormData) {
         themeData: validatedData.themeData,
         logoUrl: validatedData.logoUrl,
         isPublic: validatedData.isPublic,
-        userId: session.user.id,
+        userId: "anonymous",
       },
     });
 
@@ -74,13 +67,7 @@ export async function updateCustomTheme(
   formData: ThemeFormData,
 ) {
   try {
-    const session = await auth();
-    if (!session?.user) {
-      return {
-        success: false,
-        message: "You must be signed in to update a theme",
-      };
-    }
+    // No authentication required - allow anonymous updates
 
     const validatedData = themeSchema.parse(formData);
 
@@ -93,9 +80,7 @@ export async function updateCustomTheme(
       return { success: false, message: "Theme not found" };
     }
 
-    if (existingTheme.userId !== session.user.id) {
-      return { success: false, message: "Not authorized to update this theme" };
-    }
+    // Allow anonymous updates - no ownership check needed
 
     await db.customTheme.update({
       where: { id: themeId },
@@ -139,13 +124,7 @@ export async function updateCustomTheme(
 // Delete a custom theme
 export async function deleteCustomTheme(themeId: string) {
   try {
-    const session = await auth();
-    if (!session?.user) {
-      return {
-        success: false,
-        message: "You must be signed in to delete a theme",
-      };
-    }
+    // No authentication required - allow anonymous deletions
 
     // Verify ownership
     const existingTheme = await db.customTheme.findUnique({
@@ -156,9 +135,7 @@ export async function deleteCustomTheme(themeId: string) {
       return { success: false, message: "Theme not found" };
     }
 
-    if (existingTheme.userId !== session.user.id) {
-      return { success: false, message: "Not authorized to delete this theme" };
-    }
+    // Allow anonymous deletions - no ownership check needed
 
     // Delete logo from uploadthing if exists
     if (existingTheme.logoUrl) {
@@ -194,18 +171,10 @@ export async function deleteCustomTheme(themeId: string) {
 // Get all custom themes for the current user
 export async function getUserCustomThemes() {
   try {
-    const session = await auth();
-    if (!session?.user) {
-      return {
-        success: false,
-        message: "You must be signed in to view your themes",
-        themes: [],
-      };
-    }
-
+    // No authentication required - return all themes
     const themes = await db.customTheme.findMany({
       where: {
-        userId: session.user.id,
+        userId: "anonymous",
       },
       orderBy: {
         createdAt: "desc",
@@ -236,13 +205,6 @@ export async function getPublicCustomThemes() {
       orderBy: {
         createdAt: "desc",
       },
-      include: {
-        user: {
-          select: {
-            name: true,
-          },
-        },
-      },
     });
 
     return {
@@ -265,13 +227,6 @@ export async function getCustomThemeById(themeId: string) {
   try {
     const theme = await db.customTheme.findUnique({
       where: { id: themeId },
-      include: {
-        user: {
-          select: {
-            name: true,
-          },
-        },
-      },
     });
 
     if (!theme) {
